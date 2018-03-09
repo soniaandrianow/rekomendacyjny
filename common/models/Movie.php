@@ -5,22 +5,23 @@ namespace common\models;
 use Yii;
 
 /**
- * This is the model class for table "{{%user}}".
+ * This is the model class for table "{{%movie}}".
  *
  * @property int $id
  * @property string $name
+ * @property string $rating
  *
- * @property Rating[] $ratings
+ * @property MovieGenre[] $movieGenres
  * @property Genre[] $genres
  */
-class User extends \yii\db\ActiveRecord
+class Movie extends \yii\db\ActiveRecord
 {
     /**
      * @inheritdoc
      */
     public static function tableName()
     {
-        return '{{%user}}';
+        return '{{%movie}}';
     }
 
     /**
@@ -31,6 +32,7 @@ class User extends \yii\db\ActiveRecord
         return [
             [['id'], 'required'],
             [['id'], 'integer'],
+            [['rating'], 'number'],
             [['name'], 'string', 'max' => 45],
             [['id'], 'unique'],
         ];
@@ -44,15 +46,16 @@ class User extends \yii\db\ActiveRecord
         return [
             'id' => Yii::t('app', 'ID'),
             'name' => Yii::t('app', 'Name'),
+            'rating' => Yii::t('app', 'Rating'),
         ];
     }
 
     /**
      * @return \yii\db\ActiveQuery
      */
-    public function getRatings()
+    public function getMovieGenres()
     {
-        return $this->hasMany(Rating::className(), ['user_id' => 'id']);
+        return $this->hasMany(MovieGenre::className(), ['movie_id' => 'id']);
     }
 
     /**
@@ -60,6 +63,6 @@ class User extends \yii\db\ActiveRecord
      */
     public function getGenres()
     {
-        return $this->hasMany(Genre::className(), ['id' => 'genre_id'])->viaTable('{{%rating}}', ['user_id' => 'id']);
+        return $this->hasMany(Genre::className(), ['id' => 'genre_id'])->viaTable('{{%movie_genre}}', ['movie_id' => 'id']);
     }
 }
