@@ -9,8 +9,10 @@
 namespace console\controllers;
 
 
+use common\models\Genre;
 use common\models\Help;
 use common\models\Movie;
+use common\models\MovieGenre;
 use common\models\Rating;
 use common\models\User;
 use Yii;
@@ -238,4 +240,42 @@ class FileController extends Controller
         );
         return strtr($s, $replace);
     }
+
+    public function actionForNormalityTestRatings()
+    {
+        $path = Yii::getAlias('@console') . '/files';
+        $fileName = '/users.txt';
+        $file = fopen($path . $fileName, 'wb');
+        $movieGenre = Genre::find()->all();
+        foreach($movieGenre as $genre) {
+            $this->saveRatings($file, $genre->id);
+        }
+        fclose($file);
+
+    }
+
+    public function saveRatings($file, $genre_id)
+    {
+
+        $ratings = Rating::find()->where(['genre_id' => $genre_id])->all();
+        foreach($ratings as $rating)
+        {
+            fwrite($file, $rating->rating . PHP_EOL);
+        }
+        var_dump('Zapisano dla gatunku ' . $genre_id);
+    }
+
+    public function actionForNormalityTestMovies()
+    {
+        $path = Yii::getAlias('@console') . '/files';
+        $fileName = '/movies.txt';
+        $file = fopen($path . $fileName, 'wb');
+        $movies = Movie::find()->all();
+        foreach($movies as $movie)
+        {
+            fwrite($file, $movie->rating . PHP_EOL);
+        }
+        fclose($file);
+    }
+
 }
