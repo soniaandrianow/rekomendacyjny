@@ -9,7 +9,9 @@ use Yii;
  *
  * @property int $user_id
  * @property int $movie_id
- * @property int $rating
+ * @property double $rating
+ * @property int checked
+ * @property int correct
  */
 class Help extends \yii\db\ActiveRecord
 {
@@ -28,7 +30,8 @@ class Help extends \yii\db\ActiveRecord
     {
         return [
             [['user_id', 'movie_id'], 'required'],
-            [['user_id', 'movie_id', 'rating'], 'integer'],
+            [['user_id', 'movie_id', 'checked', 'correct'], 'integer'],
+            [['rating', 'original', 'corrected'], 'number'],
             [['user_id', 'movie_id'], 'unique', 'targetAttribute' => ['user_id', 'movie_id']],
         ];
     }

@@ -30,42 +30,58 @@ class TestController extends Controller
         $classifier = new NaiveBayes();
         $classifier->train($samples, $labels);
 
-        $prediction = $classifier->predict([2.2, 4.5, 5.0]);
+        $prediction = $classifier->predict([2.2, 5.0]);
         var_dump($prediction); die;
     }
 
     public function actionSvc()
     {
         $data = $this->prepareSamples();
+        var_dump('utworzono pliki');
         $samples = $data['samples'];
         $labels = $data['labels'];
 
-        $classifier = new SVC(Kernel::RBF, $cost = 1000, $degree = 3, $gamma = 6);
-        $classifier->train($samples, $labels);
-
-        $prediction = $classifier->predict([4, 2.2, 4.3]);
-        var_dump($prediction); die;
+//        $classifier = new SVC(Kernel::RBF, $cost = 100000, $gamma = 100);
+//        $classifier->train($samples, $labels);
+//
+//        $prediction = $classifier->predict([2.2, 4.3]);
+//        var_dump($prediction); die;
     }
 
     public function prepareSamples()
     {
+        $skip = false;
         $samples = [];
         $labels = [];
-        $helps = Help::find()->orderBy(new Expression('rand()'))->limit(200)->all();
+        $helps = Help::find()->where(['checked' => 1])->orderBy(new Expression('rand()'))->limit(5000)->all();
+        var_dump(count($helps));
         foreach($helps as $help) {
             $movie = Movie::findOne(['id' => $help->movie_id]);
             $movie_rating = $movie->rating;
             $genre_ratings = [];
             foreach($movie->genres as $genre) {
-                $rating = Rating::findOne(['and', ['user_id' => $help->user_id], ['genre_id' => $genre->id]])->rating;
-                $genre_ratings[] = $rating;
+                $ratingModel = Rating::find()->where(['user_id' => $help->user_id])->andWhere(['genre_id' => $genre->id])->one();
+                if($ratingModel) {
+                    $rating = $ratingModel->rating;
+                    $genre_ratings[] = $rating;
+                } else {
+                    $skip = true;
+                    break;
+                }
             }
-            $genre_rating = Average::median($genre_ratings);
-            $samples[] = [$help->rating, $movie_rating, $genre_rating];
-            $labels[] = $help->rating;
+            if(!$skip) {
+                $genre_rating = Average::median($genre_ratings);
+                $new_one = [$movie_rating, $genre_rating];
+                //shuffle($new_one);
+                $samples[] = $new_one;
+                $labels[] = $help->rating;
+            }
+            $skip = false;
         }
+        var_dump($samples);
+        var_dump($labels);
         $path = Yii::getAlias('@console') . '/files';
-        $fileName = '/train.txt';
+        $fileName = '/train-d.txt';
         $file = fopen($path . $fileName, 'wb');
         foreach($samples as $sample)
         {
@@ -76,7 +92,7 @@ class TestController extends Controller
         }
         fclose($file);
 
-        $fileName = '/labels.txt';
+        $fileName = '/labels-d.txt';
         $file = fopen($path . $fileName, 'wb');
         foreach($labels as $label)
         {
@@ -88,6 +104,185 @@ class TestController extends Controller
             'labels' => $labels
             ];
 
+    }
+
+    public function actionSaveForScatter()
+    {
+        $skip = false;
+        $samples_0_5 = [];
+        $samples_1= [];
+        $samples_1_5= [];
+        $samples_2= [];
+        $samples_2_5= [];
+        $samples_3= [];
+        $samples_3_5= [];
+        $samples_4= [];
+        $samples_4_5= [];
+        $samples_5= [];
+        $labels = [];
+        $helps = Help::find()->orderBy(new Expression('rand()'))->limit(500)->all();
+        foreach($helps as $help) {
+            $movie = Movie::findOne(['id' => $help->movie_id]);
+            $movie_rating = $movie->rating;
+            $genre_ratings = [];
+            foreach($movie->genres as $genre) {
+                $ratingModel = Rating::find()->where(['user_id' => $help->user_id])->andWhere(['genre_id' => $genre->id])->one();
+                if($ratingModel) {
+                    $rating = $ratingModel->rating;
+                    $genre_ratings[] = $rating;
+                } else {
+                    $skip = true;
+                    break;
+                }
+            }
+            if (!$skip) {
+                var_dump($help->rating);
+                $genre_rating = Average::median($genre_ratings);
+                switch ($help->rating) {
+                    case 0.5:
+                        $samples_0_5[] = [$movie_rating, $genre_rating];
+                        break;
+                    case 1.0:
+                        $samples_1[] = [$movie_rating, $genre_rating];
+                        break;
+                    case 1.5:
+                        $samples_1_5[] = [$movie_rating, $genre_rating];
+                        break;
+                    case 2.0:
+                        $samples_2[] = [$movie_rating, $genre_rating];
+                        break;
+                    case 2.5:
+                        $samples_2_5[] = [$movie_rating, $genre_rating];
+                        break;
+                    case 3.0:
+                        $samples_3[] = [$movie_rating, $genre_rating];
+                        break;
+                    case 3.5:
+                        $samples_3_5[] = [$movie_rating, $genre_rating];
+                        break;
+                    case 4.0:
+                        $samples_4[] = [$movie_rating, $genre_rating];
+                        break;
+                    case 4.5:
+                        $samples_4_5[] = [$movie_rating, $genre_rating];
+                        break;
+                    case 5.0:
+                        $samples_5[] = [$movie_rating, $genre_rating];
+                        break;
+                }
+            }
+            $skip = false;
+        }
+        $path = Yii::getAlias('@console') . '/files';
+        $fileName = '/scatter05.txt';
+        $file = fopen($path . $fileName, 'wb');
+        foreach($samples_0_5 as $sample)
+        {
+            foreach($sample as $data) {
+                fwrite($file, $data . '; ');
+            }
+            fwrite($file, PHP_EOL);
+        }
+        fclose($file);
+
+        $fileName = '/scatter1.txt';
+        $file = fopen($path . $fileName, 'wb');
+        foreach($samples_1 as $sample)
+        {
+            foreach($sample as $data) {
+                fwrite($file, $data . '; ');
+            }
+            fwrite($file, PHP_EOL);
+        }
+        fclose($file);
+
+        $fileName = '/scatter15.txt';
+        $file = fopen($path . $fileName, 'wb');
+        foreach($samples_1_5 as $sample)
+        {
+            foreach($sample as $data) {
+                fwrite($file, $data . '; ');
+            }
+            fwrite($file, PHP_EOL);
+        }
+        fclose($file);
+
+        $fileName = '/scatter2.txt';
+        $file = fopen($path . $fileName, 'wb');
+        foreach($samples_2 as $sample)
+        {
+            foreach($sample as $data) {
+                fwrite($file, $data . '; ');
+            }
+            fwrite($file, PHP_EOL);
+        }
+        fclose($file);
+
+        $fileName = '/scatter25.txt';
+        $file = fopen($path . $fileName, 'wb');
+        foreach($samples_2_5 as $sample)
+        {
+            foreach($sample as $data) {
+                fwrite($file, $data . '; ');
+            }
+            fwrite($file, PHP_EOL);
+        }
+        fclose($file);
+
+        $fileName = '/scatter3.txt';
+        $file = fopen($path . $fileName, 'wb');
+        foreach($samples_3 as $sample)
+        {
+            foreach($sample as $data) {
+                fwrite($file, $data . '; ');
+            }
+            fwrite($file, PHP_EOL);
+        }
+        fclose($file);
+
+        $fileName = '/scatter35.txt';
+        $file = fopen($path . $fileName, 'wb');
+        foreach($samples_3_5 as $sample)
+        {
+            foreach($sample as $data) {
+                fwrite($file, $data . '; ');
+            }
+            fwrite($file, PHP_EOL);
+        }
+        fclose($file);
+
+        $fileName = '/scatter4.txt';
+        $file = fopen($path . $fileName, 'wb');
+        foreach($samples_4 as $sample)
+        {
+            foreach($sample as $data) {
+                fwrite($file, $data . '; ');
+            }
+            fwrite($file, PHP_EOL);
+        }
+        fclose($file);
+
+        $fileName = '/scatter45.txt';
+        $file = fopen($path . $fileName, 'wb');
+        foreach($samples_4_5 as $sample)
+        {
+            foreach($sample as $data) {
+                fwrite($file, $data . '; ');
+            }
+            fwrite($file, PHP_EOL);
+        }
+        fclose($file);
+
+        $fileName = '/scatter5.txt';
+        $file = fopen($path . $fileName, 'wb');
+        foreach($samples_5 as $sample)
+        {
+            foreach($sample as $data) {
+                fwrite($file, $data . '; ');
+            }
+            fwrite($file, PHP_EOL);
+        }
+        fclose($file);
     }
 
 }
